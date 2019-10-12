@@ -4,14 +4,14 @@
       "name": "InputBlob",
       "type": "blobTrigger",
       "direction": "in",
-      "path": "geonames-org/staging/postcodes/AU.txt",
+      "path": "geonames-org/postcodes/AU.txt",
       "connection": "BlobStoreBindingConnection"
     },
     {
       "name": "OutputBlob",
       "type": "blob",
       "direction": "out",
-      "path": "geonames-org/staging/postcodes/prepared/AU.csv",
+      "path": "geonames-org/postcodes/transform/AU.csv",
       "connection": "BlobStoreBindingConnection"
     }
   ]
