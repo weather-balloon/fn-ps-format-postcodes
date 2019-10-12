@@ -3,7 +3,7 @@ param([String] $InputBlob, $TriggerMetadata)
 
 # Write out the blob name and size to the information log.
 Write-Host "PowerShell Blob trigger function Processed blob! Name: $($TriggerMetadata.Name) Size: $($InputBlob.Length) bytes"
- 
+
 $baseData = ConvertFrom-Csv -InputObject $InputBlob `
     -Delimiter "`t" `
     -Header "country_code", "postal_code", "place_name", "admin_name1", "admin_code1", "admin_name2", "admin_code2", "admin_name3", "admin_code3", "latitude", "longitude", "accuracy"
@@ -17,7 +17,7 @@ foreach ($entry in $baseData) {
             type        = "point"
             coordinates = @([double]$entry.longitude, [double]$entry.latitude)
         } | ConvertTo-Json )
-    
+
     Add-Member -InputObject $entry -MemberType NoteProperty -Name 'location' -Value ("$location" -replace '\r*\n', '')
 }
 

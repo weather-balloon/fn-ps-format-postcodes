@@ -5,14 +5,14 @@
       "type": "blobTrigger",
       "direction": "in",
       "path": "geonames-org/staging/postcodes/AU.txt",
-      "connection": "wbdatalake_STORAGE"
+      "connection": "BlobStoreBindingConnection"
     },
     {
       "name": "OutputBlob",
       "type": "blob",
       "direction": "out",
       "path": "geonames-org/staging/postcodes/prepared/AU.csv",
-      "connection": "wbdatalake_STORAGE"
+      "connection": "BlobStoreBindingConnection"
     }
   ]
 }
