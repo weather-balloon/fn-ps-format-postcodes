@@ -1,0 +1,82 @@
+trigger:
+  - master
+
+variables:
+  subscription: 'Azure Subscription'
+  location: 'australiaeast'
+  resourceGroupNamePrefix: 'wb-fn-format-postcodes'
+  serviceName: observations
+
+stages:
+  - stage: create_deployment
+    displayName: Create deployment
+
+    jobs:
+      - job: create_deployment
+        steps:
+          - task: ArchiveFiles@2
+            displayName: "Archive files"
+            inputs:
+              rootFolderOrFile: "$(System.DefaultWorkingDirectory)"
+              includeRootFolder: false
+              archiveFile: "$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
+              name: 'drop'
+
+  - stage: deploy_dev
+    displayName: Deploy to Development
+    variables:
+      environment: dev
+    jobs:
+      - job:
+        steps:
+          #- checkout: none
+          - task: DownloadPipelineArtifact@2
+            inputs:
+                artifact: drop
+                path: $(Pipeline.Workspace)/drop
+
+          - task: AzureCLI@1
+            displayName: Create the resource group
+            inputs:
+              azureSubscription: $(subscription)
+              scriptLocation: 'inlineScript'
+              inlineScript: 'az group create --name $(resourceGroupNamePrefix)-$(environment) --location $(location) --tags environment=$(environment) service=$(serviceName)'
+
+          - task: AzureResourceGroupDeployment@2
+            name: deployTemplate
+            displayName: Deploy template
+            inputs:
+              azureSubscription: $(subscription)
+              resourceGroupName: $(resourceGroupNamePrefix)-$(environment)
+              location: $(location)
+              deploymentMode: incremental
+              deploymentName: $(resourceGroupNamePrefix)_$(environment)
+              csmFile: azuredeploy.json
+              overrideParameters: >
+                -tagEnvironment $(environment)
+                -tagService $(serviceName)
+              deploymentOutputs: deploymentOutput
+
+          - task: PowerShell@2
+            name: parseOutputs
+            displayName: Parse the deployment outputs
+            inputs:
+              targetType: inline
+              script: |
+                Write-Host '$(deploymentOutput)'
+                $outputs = ConvertFrom-Json '$(deploymentOutput)'
+                $functionName = $outputs.functionName.value
+                Write-Host "##vso[task.setvariable variable=functionName;]$functionName"
+
+          - task: AzureFunctionApp@1
+            name: deployFunction
+            displayName: Deploy function app
+            inputs:
+              azureSubscription: $(subscription)
+              appType: functionApp
+              appName: $(functionName)
+              package: $(Pipeline.Workspace)/drop/build$(Build.BuildId).zip
