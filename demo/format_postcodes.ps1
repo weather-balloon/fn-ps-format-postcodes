@@ -7,12 +7,11 @@ $baseData = Import-Csv -Path $Path -Delimiter "`t" -Header "country_code", "post
 
 foreach ($entry in $baseData) {
 
-    $id = @($entry.country_code, $entry.admin_code1, $entry.place_name, $entry.postal_code)
+    $id = @($entry.country_code, $entry.admin_code1, $entry.place_name, $entry.postal_code) -join "-"
 
-    $specialChars = "' "
-    $regexPattern = ($specialChars.ToCharArray() | ForEach-Object { [regex]::Escape($_) }) -join "|"
+    $encId = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($id))
 
-    Add-Member -InputObject $entry -MemberType NoteProperty -Name 'id' -Value (($id -join "-") -replace $regexPattern, '_')
+    Add-Member -InputObject $entry -MemberType NoteProperty -Name 'id' -Value $encId
 
     $location = (@{
             type        = "point"
