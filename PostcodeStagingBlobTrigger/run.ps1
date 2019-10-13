@@ -11,7 +11,11 @@ $baseData = ConvertFrom-Csv -InputObject $InputBlob `
 foreach ($entry in $baseData) {
 
     $id = @($entry.country_code, $entry.admin_code1, $entry.place_name, $entry.postal_code)
-    Add-Member -InputObject $entry -MemberType NoteProperty -Name 'id' -Value ($id -join "-")
+
+    $specialChars = "' "
+    $regexPattern = ($specialChars.ToCharArray() | ForEach-Object { [regex]::Escape($_) }) -join "|"
+
+    Add-Member -InputObject $entry -MemberType NoteProperty -Name 'id' -Value (($id -join "-") -replace $regexPattern, '_')
 
     $location = (@{
             type        = "point"
